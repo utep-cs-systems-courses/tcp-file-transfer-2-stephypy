@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
 
-import socket, sys, re
+"""
+@author: Stephanie Galvan
+@course: Theory of Operating Systems
+@assignment: 2 - TCP File Transfer
+@python-version: 3.7.0
+"""
+
+import os
+import re
+import socket
+import sys
 
 sys.path.append("../lib")  # for params
 import params
+
+PATH_FILES = "FilesToSend/"
 
 
 def client():
@@ -29,17 +41,27 @@ def client():
 
     addr_port = (serverHost, serverPort)
 
+    # create socket object
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect(addr_port)
 
         while True:
             filename = input("> ")
+            filename.strip()
             if filename == "exit":
                 sys.exit(0)
             else:
-                s.sendall(filename.encode())
-                data = s.recv(1024)
-                print('Received', repr(data))
+                if not filename:
+                    continue
+                elif os.path.exists(PATH_FILES + filename):
+                    ext = os.path.splitext(PATH_FILES + filename)[-1].lower()
+                    print("file found")
+                else:
+                    print("file not found")
+
+               #s.sendall(filename.encode())
+                #data = s.recv(1024)
+                #print('Received', repr(data))
 
 
 if __name__ == "__main__":
