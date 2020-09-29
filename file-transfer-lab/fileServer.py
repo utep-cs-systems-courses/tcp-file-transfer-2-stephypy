@@ -6,13 +6,26 @@
 @assignment: 2 - TCP File Transfer
 @python-version: 3.7.0
 """
-
+import os
 import socket, sys
 
 sys.path.append("../lib")  # for params
 import params
 
 HOST = "127.0.0.1"
+PATH_FILES = "./ReceivedFiles"
+
+
+def write_file(filename, conn):
+    os.chdir(PATH_FILES)
+    file_writer = open(filename, 'wb')
+    l = 1
+    while l:
+        l = conn.recv(1024)
+        while l:
+            file_writer.write(l)
+            l = conn.recv(1024)
+    file_writer.close()
 
 
 def server():
@@ -44,9 +57,12 @@ def server():
 
         with conn:
             print("connection rec'd from", addr)
-            data = conn.recv(1024)
-            decoded_data = data.decode()
             while True:
+                data = conn.recv(1024)
+                d = data.decode()
+                if d:
+                    write_file(d, conn)
+
                 if not data:
                     break
                 conn.sendall(data)

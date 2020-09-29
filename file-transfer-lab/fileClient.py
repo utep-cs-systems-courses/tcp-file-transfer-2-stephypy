@@ -54,14 +54,19 @@ def client():
                 if not filename:
                     continue
                 elif os.path.exists(PATH_FILES + filename):
-                    ext = os.path.splitext(PATH_FILES + filename)[-1].lower()
-                    print("file found")
-                else:
-                    print("file not found")
+                    # send file name
+                    s.sendall(filename.encode())
+                    file_content = open(PATH_FILES + filename, "rb")
 
-               #s.sendall(filename.encode())
-                #data = s.recv(1024)
-                #print('Received', repr(data))
+                    # send file content
+                    while True:
+                        data = file_content.read(1024)
+                        s.sendall(data)
+                        if not data:
+                            break
+                    file_content.close()
+                else:
+                    print("File %s not found" % filename)
 
 
 if __name__ == "__main__":
