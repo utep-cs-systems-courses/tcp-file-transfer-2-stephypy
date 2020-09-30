@@ -17,15 +17,16 @@ PATH_FILES = "./ReceivedFiles"
 
 
 def write_file(filename, conn):
-    os.chdir(PATH_FILES)
+    # create file to write
     file_writer = open(filename, 'wb')
-    l = 1
-    while l:
-        l = conn.recv(1024)
-        while l:
-            file_writer.write(l)
-            l = conn.recv(1024)
+
+    # receive and write data
+    data = conn.recv(1024)
+    file_writer.write(data)
+
+    # close and inform user
     file_writer.close()
+    print("file %s received" % filename)
 
 
 def server():
@@ -55,11 +56,17 @@ def server():
         # connection and tuple for client address (host, port)
         conn, addr = s.accept()
 
+        # move to directory to receive files
+        os.chdir(PATH_FILES)
+
         with conn:
             print("connection rec'd from", addr)
             while True:
+                # receive file name first
                 data = conn.recv(1024)
                 d = data.decode()
+
+                # if filename was provided, write it
                 if d:
                     write_file(d, conn)
 
