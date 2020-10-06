@@ -11,6 +11,7 @@ import os
 import re
 import socket
 import sys
+from stat import *
 
 sys.path.append("../lib")  # for params
 import params
@@ -42,31 +43,35 @@ def client():
     addr_port = (serverHost, serverPort)
 
     # create socket object
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect(addr_port)
+    listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listen_socket.connect(addr_port)
 
-        while True:
-            filename = input("> ")
-            filename.strip()
-            if filename == "exit":
-                sys.exit(0)
+    while True:
+        filename = input("> ")
+        filename.strip()
+
+        if filename == "exit":
+            sys.exit(0)
+        else:
+            if not filename:
+                continue
+            elif os.path.exists(PATH_FILES + filename):
+                # send file name
+                listen_socket.sendall(filename.encode())
+                file_content = open(PATH_FILES + filename, "rb")
+
+                # send file size
+                listen_socket.sendall(str(os.stat(PATH_FILES + filename).st_size).encode())
+
+                # send file content
+                while True:
+                    data = file_content.read(1024)
+                    listen_socket.sendall(data)
+                    if not data:
+                        break
+                file_content.close()
             else:
-                if not filename:
-                    continue
-                elif os.path.exists(PATH_FILES + filename):
-                    # send file name
-                    s.sendall(filename.encode())
-                    file_content = open(PATH_FILES + filename, "rb")
-
-                    # send file content
-                    while True:
-                        data = file_content.read(1024)
-                        s.sendall(data)
-                        if not data:
-                            break
-                    file_content.close()
-                else:
-                    print("File %s not found" % filename)
+                print("File %s not found" % filename)
 
 
 if __name__ == "__main__":
