@@ -17,6 +17,8 @@ sys.path.append("../lib")  # for params
 import params
 
 PATH_FILES = "FilesToSend/"
+CONFIRM_MSG = "File %s received by the server"
+REJECT_MSG = "File %s could not be received by the server. Try again"
 
 
 def client():
@@ -70,8 +72,20 @@ def client():
                     if not data:
                         break
                 file_content.close()
+
+                # check if server received file
+                status = int(listen_socket.recv(1024).decode())
+                # successful transfer
+                if status:
+                    print(CONFIRM_MSG % filename)
+                    sys.exit(0)
+                # failed transfer
+                else:
+                    print(REJECT_MSG % filename)
+                    sys.exit(1)
+            # file not found
             else:
-                print("File %s not found" % filename)
+                print("ERROR: file %s not found" % filename)
 
 
 if __name__ == "__main__":
