@@ -67,12 +67,10 @@ def client():
 
                 # check if server received file
                 status = int(listen_socket.recv(1024).decode())
-
                 # successful transfer
                 if status:
                     print(CONFIRM_MSG % filename)
                     sys.exit(0)
-
                 # failed transfer
                 else:
                     print(REJECT_MSG % filename)
