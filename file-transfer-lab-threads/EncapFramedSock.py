@@ -46,10 +46,14 @@ class EncapFramedSock:  # a facade
                 return None, None
             if debugPrint: print("FramedReceive: state=%s, length=%d, self.rbuf=%s" % (state, msgLength, self.rbuf))
 
-    def send_status(self, status, debugPrint=0):
+    def send_status(self, status, is_empty=0, debugPrint=0):
         if debugPrint: print("framedSend: sending status %s" % str(status))
+        # sending status first
         self.sock.sendall(str(status).encode())
+        # sending whether file was empty or not
+        self.sock.sendall(str(is_empty).encode())
 
     def get_status(self):
-        status = int(self.sock.recv(1024).decode())
-        return status
+        status = self.sock.recv(128)
+        is_empty = self.sock.recv(128)
+        return status, is_empty

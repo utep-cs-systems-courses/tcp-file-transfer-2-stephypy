@@ -19,6 +19,7 @@ from EncapFramedSock import EncapFramedSock
 PATH_FILES = "FilesToSend/"
 CONFIRM_MSG = "File %s received by the server"
 REJECT_MSG = "File %s could not be received by the server. Try again"
+EMPTY_MSG = "File %s was empty. Try again"
 
 
 def client():
@@ -65,11 +66,18 @@ def client():
                 file = open(PATH_FILES + filename, "rb")
                 file_content = file.read()
 
+                # verify file is not empty before sending
+                if len(file_content) < 1:
+                    print(EMPTY_MSG % filename)
+                    continue
+
                 # send file contents to server
                 encap_socket.send(filename, file_content, debug)
 
                 # check if server received file
-                status = encap_socket.get_status()
+                status, is_empty = encap_socket.get_status()
+                status = int(status.decode())
+                is_empty = int(is_empty.decode())
 
                 # successful transfer
                 if status:
@@ -77,6 +85,9 @@ def client():
                     sys.exit(0)
                 # failed transfer
                 else:
+                    if is_empty:
+                        print(EMPTY_MSG % filename)
+                        sys.exit(1)
                     print(REJECT_MSG % filename)
                     sys.exit(1)
 

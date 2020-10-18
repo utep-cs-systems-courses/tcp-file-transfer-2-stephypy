@@ -62,6 +62,11 @@ def client():
                 file = open(PATH_FILES + filename, "rb")
                 file_content = file.read()
 
+                # verify file is not empty
+                if len(file_content) < 1:
+                    print("ERROR: file %s is empty" % filename)
+                    continue
+
                 # send file contents to server
                 framedSend(listen_socket, filename, file_content, debug)
 
@@ -79,7 +84,6 @@ def client():
             # file not found
             else:
                 print("ERROR: file %s not found" % filename)
-                sys.exit(1)
 
 
 if __name__ == "__main__":

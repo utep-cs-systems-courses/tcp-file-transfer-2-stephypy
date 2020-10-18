@@ -62,7 +62,7 @@ class Server(Thread):
         except FileNotFoundError:
             print("ERROR: file %s not found " % filename)
             # send failed status
-            self.fsock.send_status(0, debug)
+            self.fsock.send_status(0, 0, debug)
             sys.exit(1)
 
     def run(self):
@@ -74,15 +74,33 @@ class Server(Thread):
             except:
                 print("ERROR: file transfer failed")
                 # send failed status
-                self.fsock.send_status(0, debug)
+                self.fsock.send_status(0, 0, debug)
                 self.fsock.close()
                 sys.exit(1)
 
             if debug: print("rec'd: ", file_content)
 
+            # if data was not received, the client has closed:
+            if filename is None or file_content is None:
+                print("client ", self.addr, " disconnected")
+                # send failed status
+                self.fsock.send_status(0, 0, debug)
+                self.fsock.close()
+                sys.exit(1)
+
+            # verify file is not empty
             filename = filename.decode()
+            if len(file_content) < 1:
+                # error and failed status
+                print("ERROR: file %s is empty" % filename)
+                self.fsock.send_status(0, 1, debug)
+                self.fsock.close()
+                sys.exit(1)
+
+            # write file and save it to folder
             self.write_file(filename, file_content)
-            self.fsock.send_status(1, debug)
+            # success status and close
+            self.fsock.send_status(1, 0, debug)
             sys.exit(0)
 
 
