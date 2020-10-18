@@ -60,6 +60,8 @@ def server():
     print("listening on: ", bind_addr)
 
     # move to directory to receive files
+    if not os.path.exists(PATH_FILES):
+        os.makedirs(PATH_FILES)
     os.chdir(PATH_FILES)
 
     while True:
