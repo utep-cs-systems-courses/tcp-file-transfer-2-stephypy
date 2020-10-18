@@ -11,10 +11,10 @@ import os
 import re
 import socket
 import sys
-from stat import *
 
 sys.path.append("../lib")  # for params
 import params
+from framedSock import framedSend, framedReceive
 
 PATH_FILES = "FilesToSend/"
 CONFIRM_MSG = "File %s received by the server"
@@ -39,7 +39,7 @@ def client():
         serverHost, serverPort = re.split(":", server)
         serverPort = int(serverPort)
     except:
-        print("Can't parse server:port from '%s'" % server)
+        print("can't parse server:port from '%s'" % server)
         sys.exit(1)
 
     addr_port = (serverHost, serverPort)
@@ -49,7 +49,7 @@ def client():
     listen_socket.connect(addr_port)
 
     while True:
-        filename = input("> ")
+        filename = input("Enter the file to be sent: ")
         filename.strip()
 
         if filename == "exit":
@@ -58,34 +58,30 @@ def client():
             if not filename:
                 continue
             elif os.path.exists(PATH_FILES + filename):
-                # send file name
-                listen_socket.sendall(filename.encode())
-                file_content = open(PATH_FILES + filename, "rb")
+                # open file and read
+                file = open(PATH_FILES + filename, "rb")
+                file_content = file.read()
 
-                # send file size
-                listen_socket.sendall(str(os.stat(PATH_FILES + filename).st_size).encode())
-
-                # send file content
-                while True:
-                    data = file_content.read(1024)
-                    listen_socket.sendall(data)
-                    if not data:
-                        break
-                file_content.close()
+                # send file contents to server
+                framedSend(listen_socket, filename, file_content, debug)
 
                 # check if server received file
                 status = int(listen_socket.recv(1024).decode())
+
                 # successful transfer
                 if status:
                     print(CONFIRM_MSG % filename)
                     sys.exit(0)
+
                 # failed transfer
                 else:
                     print(REJECT_MSG % filename)
                     sys.exit(1)
+
             # file not found
             else:
                 print("ERROR: file %s not found" % filename)
+                sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -11,33 +11,24 @@ import socket, sys
 
 sys.path.append("../lib")  # for params
 import params
+from framedSock import framedSend, framedReceive
 
 HOST = "127.0.0.1"
 PATH_FILES = "./ReceivedFiles"
 CONFIRM_MSG = "file %s received from %s"
 
 
-def write_file(filename, byte, conn, addr):
+def write_file(filename, file_content, conn, addr):
     try:
         # create file to write
         file_writer = open(filename, 'w+b')
-
-        # receive and write data
-        i = 0
-        data = ''.encode()
-        while i < byte:
-            data = conn.recv(1024)
-            if not data:
-                break
-            i += len(data)
-        bytearray(data)
-        file_writer.write(data)
+        file_writer.write(file_content)
 
         # close and print confirmation msg on server
         file_writer.close()
         print(CONFIRM_MSG % (filename, addr))
     except FileNotFoundError:
-        print("ERROR: file not found")
+        print("ERROR: file %s not found " % filename)
         # send failed status
         conn.sendall(str(0).encode())
         sys.exit(1)
@@ -81,31 +72,23 @@ def server():
 
         if not os.fork():
             print("connection rec'd from", addr)
-            # receive file name first
-            data = conn.recv(1024)
-            filename = data.decode()
 
-            # file byte size
-            data_byte = conn.recv(1024).decode()
             try:
-                data_byte = int(data_byte)
-            except ValueError:
-                print("ERROR: byte size not received")
+                # receiving files sent from client
+                filename, file_content = framedReceive(conn, debug)
+            except:
+                print("ERROR: file transfer failed")
                 # send failed status
                 conn.sendall(str(0).encode())
                 sys.exit(1)
 
-            # if filename was provided, write it
-            if filename:
-                write_file(filename, data_byte, conn, addr)
-                # send successful status
-                conn.sendall(str(1).encode())
-                sys.exit(0)
-            else:
-                print("ERROR: empty filename")
-                # send failed status
-                conn.sendall(str(0).encode())
-                sys.exit(1)
+            # attempt to save files into ReceivedFiles folder
+            filename = filename.decode()
+            write_file(filename, file_content, conn, addr)
+
+            # send success status
+            conn.sendall(str(1).encode())
+            sys.exit(0)
 
 
 if __name__ == "__main__":
