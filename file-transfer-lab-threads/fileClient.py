@@ -75,9 +75,8 @@ def client():
                 encap_socket.send(filename, file_content, debug)
 
                 # check if server received file
-                status, is_empty = encap_socket.get_status()
+                status = encap_socket.get_status()
                 status = int(status.decode())
-                is_empty = int(is_empty.decode())
 
                 # successful transfer
                 if status:
@@ -85,9 +84,6 @@ def client():
                     sys.exit(0)
                 # failed transfer
                 else:
-                    if is_empty:
-                        print(EMPTY_MSG % filename)
-                        sys.exit(1)
                     print(REJECT_MSG % filename)
                     sys.exit(1)
 

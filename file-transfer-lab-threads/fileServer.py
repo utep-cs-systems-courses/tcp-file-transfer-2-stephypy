@@ -6,8 +6,10 @@
 @assignment: 2 - TCP File Transfer
 @python-version: 3.7.0
 """
-
+import os
 import socket, sys
+import threading
+import time
 from threading import Thread
 
 sys.path.append("../lib")  # for params
@@ -43,6 +45,9 @@ listen_socket.bind(bind_addr)
 listen_socket.listen(5)
 print("listening on: ", bind_addr)
 
+# make lock
+lock = threading.Lock()
+
 
 class Server(Thread):
     def __init__(self, sockAddr):
@@ -52,6 +57,10 @@ class Server(Thread):
 
     def write_file(self, filename, file_content):
         try:
+            # check if dir to receive files exists, if not create it
+            if not os.path.exists(PATH_FILES):
+                os.makedirs(PATH_FILES)
+
             # create file to write
             file_writer = open(PATH_FILES + filename, 'w+b')
             file_writer.write(file_content)
@@ -62,7 +71,7 @@ class Server(Thread):
         except FileNotFoundError:
             print("ERROR: file %s not found " % filename)
             # send failed status
-            self.fsock.send_status(0, 0, debug)
+            self.fsock.send_status(0, debug)
             sys.exit(1)
 
     def run(self):
@@ -74,7 +83,7 @@ class Server(Thread):
             except:
                 print("ERROR: file transfer failed")
                 # send failed status
-                self.fsock.send_status(0, 0, debug)
+                self.fsock.send_status(0, debug)
                 self.fsock.close()
                 sys.exit(1)
 
@@ -83,25 +92,24 @@ class Server(Thread):
             # if data was not received, the client has closed:
             if filename is None or file_content is None:
                 print("client ", self.addr, " disconnected")
-                # send failed status
-                self.fsock.send_status(0, 0, debug)
-                self.fsock.close()
-                sys.exit(1)
+                sys.exit(0)
 
-            # verify file is not empty
-            filename = filename.decode()
-            if len(file_content) < 1:
-                # error and failed status
-                print("ERROR: file %s is empty" % filename)
-                self.fsock.send_status(0, 1, debug)
-                self.fsock.close()
-                sys.exit(1)
+            # lock section
+            lock.acquire()
+            if debug:
+                time.sleep(5)
 
             # write file and save it to folder
+            filename = filename.decode()
+            print(self.addr, " will attempt to save file %s" % filename)
             self.write_file(filename, file_content)
+
             # success status and close
-            self.fsock.send_status(1, 0, debug)
-            sys.exit(0)
+            print("sending success status to client", self.addr)
+            self.fsock.send_status(1, debug)
+            print("status has been sent to ", self.addr)
+            lock.release()
+            # end of lock section
 
 
 def main():
