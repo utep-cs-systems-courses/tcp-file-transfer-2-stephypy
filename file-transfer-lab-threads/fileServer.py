@@ -105,9 +105,7 @@ class Server(Thread):
             self.write_file(filename, file_content)
 
             # success status and close
-            print("sending success status to client", self.addr)
             self.fsock.send_status(1, debug)
-            print("status has been sent to ", self.addr)
             lock.release()
             # end of lock section
 
